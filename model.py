@@ -1,5 +1,5 @@
 """Models and database functions for Ratings project."""
-
+import os
 from flask_sqlalchemy import SQLAlchemy
 
 # This is the connection to the PostgreSQL database; we're getting this through
@@ -23,10 +23,39 @@ class User(db.Model):
     age = db.Column(db.Integer, nullable=True)
     zipcode = db.Column(db.String(15), nullable=True)
 
+    def __repr__(self):
+        return f"<User user_id={self.user_id} email={self.email}>"
+
+    def check_password(self, password_input):
+        return self.password == password_input
 
 # Put your Movie and Rating model classes here.
+class Movie(db.Model):
 
+    __tablename__ = "movies"
 
+    movie_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    released_at = db.Column(db.DateTime, nullable=True)
+    imdb_url = db.Column(db.String(300), nullable=True)
+
+    def __repr__(self):
+        return f"<Movie movie_id={self.movie_id} title={self.title}>"
+
+class Rating(db.Model):
+
+    __tablename__ = "ratings"
+
+    rating_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
+    movie_id = db.Column(db.Integer, db.ForeignKey("movies.movie_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+
+    user = db.relationship("User", backref=db.backref("ratings", order_by=rating_id))
+    movie = db.relationship("Movie", backref=db.backref("ratings", order_by=rating_id))
+
+    def __repr__(self):
+        return f"<Rating rating_id={self.rating_id} movie_id={self.movie_id} user_id={self.user_id} score={self.score}>"
 ##############################################################################
 # Helper functions
 
@@ -34,7 +63,7 @@ def connect_to_db(app):
     """Connect the database to our Flask app."""
 
     # Configure to use our PstgreSQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///ratings'
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["POSTGRES_URI"]
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)

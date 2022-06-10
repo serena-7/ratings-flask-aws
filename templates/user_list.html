@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% set active_page = 'user_list' %}
+{% block title %}
+User List
+{% endblock %}
+{% block content %}
+
+<h2 class="text-center">Users</h2>
+<hr>
+<div class="list-group align-items-center">
+    {% for user in users %}
+        <a href="/users/{{user.user_id}}" class="list-group-item list-group-item-action text-center col-sm-4">
+            {{user.email if user.email is not none else 'anonymous'}} ({{user.user_id}})
+        </a>
+    {% endfor %}
+</div>
+{% endblock %}

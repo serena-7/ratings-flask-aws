@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% set active_page = 'homepage' %}
+{% block title %}Ratings Home{% endblock %}
+
+{% block content %}
+
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to Movie Ratings Website!</h1>
+    <hr class="my-4">
+    <p>Where users can view and create ratings on movies!</p>
+</div>
+
+<h2>Movies</h2>
+<p><a href="/movies">View all movies</a></p>
+
+<h2>Users</h2>
+<p><a href="/users">View all users</a></p>
+
+{% endblock %}
