@@ -22,6 +22,15 @@ app.jinja_env.undefined = StrictUndefined
 app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = True
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 
+BERATEMENT_MESSAGES = [
+    "I suppose you don't have such bad taste after all.",
+    "I regret every decision that I've ever made has brought me to listen to your opinion.",
+    "Words fail me, as your taste in movies has clearly failed you.",
+    "That movie is great. For a clown to watch. Idiot.",
+    "Words cannot express the awfulness of your taste."
+]
+
+
 @app.route('/')
 def index():
     """Homepage."""
@@ -73,6 +82,26 @@ def movie_detail(movie_id):
             if prediction:
                 prediction = round(prediction)
 
+    if prediction:
+        effective_rating = prediction
+    elif user_rating:
+        effective_rating = user_rating
+    else:
+        effective_rating = None
+
+    the_eye = (User.query.filter_by(email="the-eye@of-judgment.com").one())
+    eye_rating = Rating.query.filter_by(user_id=the_eye.user_id, movie_id=movie.movie_id).first()
+
+    if eye_rating is None:
+        eye_rating = the_eye.predict_rating(movie)
+    else:
+        eye_rating = eye_rating.score
+    
+    if eye_rating and effective_rating:
+        beratement = BERATEMENT_MESSAGES[abs(round(eye_rating) - effective_rating)]
+    else:
+        beratement = None
+
     return render_template(
         "movie_detail.html", 
         movie=movie, 
@@ -80,7 +109,8 @@ def movie_detail(movie_id):
         movie_avg=avg_rating, 
         ratings=movie.ratings, 
         user_rating=user_rating, 
-        prediction=prediction
+        prediction=prediction,
+        beratement=beratement
         )
 
 @app.route('/movies/<movie_id>/rate', methods=["GET","POST"])
@@ -93,12 +123,17 @@ def rate_movie(movie_id):
     
     movie = Movie.query.get(movie_id)
     
+
     form = RatingForm()
     
     if form.validate_on_submit():
         score = form.rating.data
-        rating = Rating(movie_id=movie_id, user_id=user_id, score=score)
-        db.session.add(rating)
+        existing_rating = Rating.query.filter_by(user_id=user_id, movie_id=movie_id).first()
+        if existing_rating == None:
+            rating = Rating(movie_id=movie_id, user_id=user_id, score=score)
+            db.session.add(rating)
+        else:
+            existing_rating.score = score
         db.session.commit()
         return redirect(url_for("movie_detail", movie_id=movie_id))
 
