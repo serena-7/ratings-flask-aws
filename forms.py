@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms.fields import StringField, PasswordField, SubmitField, IntegerField
+from wtforms.fields import StringField, PasswordField, SubmitField, IntegerField, RadioField
 from wtforms.validators import InputRequired, DataRequired, EqualTo, Length, ValidationError
 from model import User
 
@@ -46,3 +46,16 @@ class LoginForm(FlaskForm):
     def validate_email(self, email):
         if User.query.filter_by(email=self.email.data).first() is None:
             raise ValidationError("Email is not registered!")
+
+class RatingForm(FlaskForm):
+    rating = RadioField('rating', choices=[
+        (5,'☆'),
+        (4,'☆'),
+        (3,'☆'),
+        (2,'☆'),
+        (1,'☆')], 
+        validators=[
+            InputRequired("Input is required!"),
+            DataRequired("Data is required")
+        ])
+    submit = SubmitField("Submit Rating")

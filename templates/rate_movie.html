@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% set active_page = 'rate_movie' %}
+{% from '_error_messages.html' import field_error_messages, error_messages %}
+{% block title %}
+Rate {{ movie.title }}
+{% endblock %}
+
+{% block content %}
+    <h1 class="text-center">Rate Movie: {{ movie.title }}</h1>
+    <hr>
+    <form method="POST">
+        {{ form.csrf_token }}
+        {{ error_messages(form.errors) }}
+        <div class="star-rating row flex-row-reverse justify-content-sm-center">
+            {% for subfield in form.rating %}
+                {{subfield}}{{subfield.label}}
+            {% endfor %}
+        </div>
+        <div class="form-group col-md-12 text-center">
+            {{ form.submit(class="brn btn-primary") }}
+        </div>
+    </form>
+{% endblock %}
+<!-- row flex-row-reverse justify-content-sm-center -->

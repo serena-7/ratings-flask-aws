@@ -6,7 +6,7 @@ from flask import Flask, render_template, redirect, request, flash, session, url
 from flask_debugtoolbar import DebugToolbarExtension
 from datetime import datetime
 from model import connect_to_db, db, User, Rating, Movie
-from forms import RegistrationForm, LoginForm
+from forms import RegistrationForm, LoginForm, RatingForm
 from sqlalchemy.sql import func
 
 app = Flask(__name__)
@@ -47,12 +47,62 @@ def movie_list():
 
 @app.route('/movies/<movie_id>')
 def movie_detail(movie_id):
+    # get user_id from session
+    user_id = session.get("user_id")
+    
+    # get movie, format date, and calc average rating
     movie = Movie.query.get(movie_id)
-    movie_ratings = Rating.query.join(User, Rating.user_id==User.user_id).add_columns(User.email.label('email'), Rating.score.label('score')).filter(Rating.movie_id==Movie.movie_id).all()
     date = movie.released_at.strftime("%b-%d-%Y")
-    movie_avg = Rating.query.with_entities(func.avg(Rating.score)).filter(Rating.movie_id==movie.movie_id).first()
-    movie_avg = round(movie_avg[0])
-    return render_template("movie_detail.html", movie=movie, date=date, movie_avg=movie_avg, ratings=movie_ratings)
+    scores = [r.score for r in movie.ratings]
+    avg_rating = round(sum(scores)/len(scores))
+
+    # get user_rating if it exists and user is logged in
+    if user_id:
+        user_rating = Rating.query.filter_by(movie_id=movie_id, user_id=user_id).first()
+        if user_rating:
+            user_rating = round(user_rating.score)
+    else:
+        user_rating = None
+    
+    # get prediction if user_rating doesn't exist and user is logged in
+    prediction = None
+    if (not user_rating) and user_id:
+        user = User.query.get(user_id)
+        if user:
+            prediction = user.predict_rating(movie)
+            if prediction:
+                prediction = round(prediction)
+
+    return render_template(
+        "movie_detail.html", 
+        movie=movie, 
+        date=date, 
+        movie_avg=avg_rating, 
+        ratings=movie.ratings, 
+        user_rating=user_rating, 
+        prediction=prediction
+        )
+
+@app.route('/movies/<movie_id>/rate', methods=["GET","POST"])
+def rate_movie(movie_id):
+    user_id = session.get("user_id")
+    
+    if not user_id:
+        flash("Log in to rate movies", "warning")
+        return redirect(url_for("movie_detail", movie_id=movie_id))
+    
+    movie = Movie.query.get(movie_id)
+    
+    form = RatingForm()
+    
+    if form.validate_on_submit():
+        score = form.rating.data
+        rating = Rating(movie_id=movie_id, user_id=user_id, score=score)
+        db.session.add(rating)
+        db.session.commit()
+        return redirect(url_for("movie_detail", movie_id=movie_id))
+
+    return render_template("rate_movie.html", form=form, movie=movie)
 
 @app.route('/register', methods=["GET","POST"])
 def register():

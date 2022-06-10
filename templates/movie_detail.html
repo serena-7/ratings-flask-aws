@@ -20,6 +20,32 @@
             &#9734;
         {% endfor %}
     </p>
+    {% if prediction %}
+        <h4 class="text-center">We predict your rating will be:</h4>
+        <p class="text-center">
+            {% for i in range(prediction) %}
+                &#9733;
+            {% endfor %}
+            {% for i in range(5-prediction) %}
+                &#9734;
+            {% endfor %}
+        </p>
+    {% endif %}
+    {% if user_rating %}
+        <h4 class="text-center">Your Rating</h4>
+        <p class="text-center">
+            {% for i in range(user_rating) %}
+                &#9733;
+            {% endfor %}
+            {% for i in range(5-user_rating) %}
+                &#9734;
+            {% endfor %}
+        </p>
+    {% else %}
+    <div class="row justify-content-center">
+        <a href="/movies/{{ movie.movie_id }}/rate" class="btn btn-primary" role="button">Rate Movie</a>
+    </div>
+    {% endif %}
 </div>
 
 <h1 class="text-center">Ratings for {{ movie.title }}</h1>
@@ -27,7 +53,7 @@
 {% if ratings %}
         {% for rating in ratings %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ rating.email if rating.email is not none else 'Anonymous' }}
+            {{ rating.user.email if rating.user.email is not none else 'Anonymous' }}
             <span class="badge">
                 {% for i in range(rating.score) %}
                     &#9733;
