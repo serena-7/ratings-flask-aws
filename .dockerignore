@@ -1,0 +1,21 @@
+.git
+Dockerfile
+.gitignore
+.dockerignore
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+_build/
+
+docker.env
+.env
+venv/
+config.sh
+
+dev/
+
+# don't include seeding information in docker container
+seed_data/
+seed.py

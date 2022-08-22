@@ -1,10 +1,13 @@
 """Models and database functions for Ratings project."""
-import os
+# import os
+# from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 import correlation
+from config import PG_URI
 # This is the connection to the PostgreSQL database; we're getting this through
 # the Flask-SQLAlchemy helper library. On this, we can find the `session`
 # object, where we do most of our interactions (like committing, etc.)
+# load_dotenv()
 
 db = SQLAlchemy()
 
@@ -28,7 +31,7 @@ class User(db.Model):
 
     def check_password(self, password_input):
         return self.password == password_input
-    
+
     def similarity(self, other):
         """Return Pearson rating for user compared to other user"""
         u_ratings = {}
@@ -39,17 +42,17 @@ class User(db.Model):
         for r in other.ratings:
             u_rating = u_ratings.get(r.movie_id)
             if u_rating:
-                paired_ratings.append( (u_rating.score, r.score) )
-        
+                paired_ratings.append((u_rating.score, r.score))
+
         if paired_ratings:
             return correlation.pearson(paired_ratings)
         else:
             return 0.0
-    
+
     def predict_rating(self, movie):
         """Predict a user's rating of a movie"""
         other_ratings = movie.ratings
-        other_users = [ r.user for r in other_ratings ]
+        other_users = [r.user for r in other_ratings]
 
         similarities = [
             (self.similarity(r.user), r)
@@ -73,6 +76,8 @@ class User(db.Model):
         # return rating.score * sim
 
 # Put your Movie and Rating model classes here.
+
+
 class Movie(db.Model):
 
     __tablename__ = "movies"
@@ -85,28 +90,34 @@ class Movie(db.Model):
     def __repr__(self):
         return f"<Movie movie_id={self.movie_id} title={self.title}>"
 
+
 class Rating(db.Model):
 
     __tablename__ = "ratings"
 
     rating_id = db.Column(db.Integer, autoincrement=True, primary_key=True)
-    movie_id = db.Column(db.Integer, db.ForeignKey("movies.movie_id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey(
+        "movies.movie_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        "users.user_id"), nullable=False)
     score = db.Column(db.Integer, nullable=False)
 
-    user = db.relationship("User", backref=db.backref("ratings", order_by=rating_id))
-    movie = db.relationship("Movie", backref=db.backref("ratings", order_by=rating_id))
+    user = db.relationship("User", backref=db.backref(
+        "ratings", order_by=rating_id))
+    movie = db.relationship("Movie", backref=db.backref(
+        "ratings", order_by=rating_id))
 
     def __repr__(self):
         return f"<Rating rating_id={self.rating_id} movie_id={self.movie_id} user_id={self.user_id} score={self.score}>"
 ##############################################################################
 # Helper functions
 
+
 def connect_to_db(app):
     """Connect the database to our Flask app."""
 
     # Configure to use our PstgreSQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["POSTGRES_URI"]
+    app.config['SQLALCHEMY_DATABASE_URI'] = PG_URI
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.app = app
     db.init_app(app)
